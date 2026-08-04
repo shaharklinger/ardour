@@ -47,6 +47,7 @@ RouteGroupDialog::RouteGroupDialog (std::shared_ptr<RouteGroup> g, bool creating
 	, _group (g)
 	, _initial_name (g->name ())
 	, _active (_("Active"))
+	, _select_all (_("All"))
 	, _gain (_("Gain"))
 	, _relative (_("Relative"))
 	, _mute (_("Muting"))
@@ -105,6 +106,7 @@ RouteGroupDialog::RouteGroupDialog (std::shared_ptr<RouteGroup> g, bool creating
 	l->set_use_markup ();
 	options_box->pack_start (*l, false, true);
 
+	_select_all.set_active (are_all_route_properties_active());
 	_gain.set_active (_group->is_gain());
 	_relative.set_active (_group->is_relative());
 	_mute.set_active (_group->is_mute());
@@ -131,6 +133,7 @@ RouteGroupDialog::RouteGroupDialog (std::shared_ptr<RouteGroup> g, bool creating
 	_name.signal_changed().connect (sigc::mem_fun (*this, &RouteGroupDialog::update));
 	_active.signal_toggled().connect (sigc::mem_fun (*this, &RouteGroupDialog::update));
 	_color.signal_color_set().connect (sigc::mem_fun (*this, &RouteGroupDialog::update));
+	_select_all_conn = _select_all.signal_toggled().connect (sigc::mem_fun (*this, &RouteGroupDialog::select_all_toggled));
 	_gain.signal_toggled().connect (sigc::mem_fun (*this, &RouteGroupDialog::update));
 	_relative.signal_toggled().connect (sigc::mem_fun (*this, &RouteGroupDialog::update));
 	_mute.signal_toggled().connect (sigc::mem_fun (*this, &RouteGroupDialog::update));
@@ -144,21 +147,23 @@ RouteGroupDialog::RouteGroupDialog (std::shared_ptr<RouteGroup> g, bool creating
 
 	gain_toggled ();
 
-	Table* table = manage (new Table (11, 4, false));
-	table->set_row_spacings	(6);
+	Table* table = manage (new Table (12, 4, false));
+	table->set_row_spacings (6);
 
 	l = manage (new Label ("", Gtk::ALIGN_START, Gtk::ALIGN_CENTER, false));
 	l->set_padding (8, 0);
-	table->attach (*l, 0, 1, 0, 8, Gtk::FILL, Gtk::FILL, 0, 0);
+	table->attach (*l, 0, 1, 0, 9, Gtk::FILL, Gtk::FILL, 0, 0);
 
-	table->attach (_gain, 1, 3, 1, 2, Gtk::FILL, Gtk::FILL, 0, 0);
+	table->attach (_select_all, 1, 3, 1, 2, Gtk::FILL, Gtk::FILL, 0, 0);
+
+	table->attach (_gain, 1, 3, 2, 3, Gtk::FILL, Gtk::FILL, 0, 0);
 
 	l = manage (new Label ("", Gtk::ALIGN_START, Gtk::ALIGN_CENTER, false));
 	l->set_padding (0, 0);
-	table->attach (*l, 1, 2, 2, 3, Gtk::FILL, Gtk::FILL, 0, 0);
-	table->attach (_relative, 2, 3, 2, 3, Gtk::FILL, Gtk::FILL, 0, 0);
+	table->attach (*l, 1, 2, 3, 4, Gtk::FILL, Gtk::FILL, 0, 0);
+	table->attach (_relative, 2, 3, 3, 4, Gtk::FILL, Gtk::FILL, 0, 0);
 
-	int r = 3;
+	int r = 4;
 	table->attach (_mute,             1, 3, r, r + 1, Gtk::FILL, Gtk::FILL, 0, 0); ++r;
 	table->attach (_solo,             1, 3, r, r + 1, Gtk::FILL, Gtk::FILL, 0, 0); ++r;
 	table->attach (_rec_enable,       1, 3, r, r + 1, Gtk::FILL, Gtk::FILL, 0, 0); ++r;
@@ -242,6 +247,7 @@ RouteGroupDialog::update ()
 	_group->apply_changes (plist);
 
 	GroupTabs::set_group_color (_group, Gtkmm2ext::gdk_color_to_rgba (_color.get_color ()));
+	route_property_toggled ();
 }
 
 void
@@ -262,4 +268,49 @@ RouteGroupDialog::unique_name (std::string const name) const
 	}
 
 	return (i == route_groups.end ());
+}
+
+void
+RouteGroupDialog::select_all_toggled () {
+	// If all properties are checked, uncheck them, otherwise, turn on the unchecked ones.
+	const bool toggle_state = !are_all_route_properties_active ();
+
+	_gain.set_active(toggle_state);
+	_relative.set_active(toggle_state);
+	_mute.set_active(toggle_state);
+	_solo.set_active(toggle_state);
+	_rec_enable.set_active(toggle_state);
+#ifdef VAPOR
+	_sursend_enable.set_active(toggle_state);
+#endif
+	_select.set_active(toggle_state);
+	_route_active.set_active(toggle_state);
+	_share_color.set_active(toggle_state);
+	_share_monitoring.set_active(toggle_state);
+}
+
+/** @return true if all route properties are active */
+bool 
+RouteGroupDialog::are_all_route_properties_active () const
+{
+	return _group->is_gain ()
+		&& _group->is_relative ()
+		&& _group->is_mute ()
+		&& _group->is_solo ()
+		&& _group->is_recenable ()
+#ifdef VAPOR
+		&& _group->is_sursend_enable ()
+#endif
+		&& _group->is_select ()
+		&& _group->is_route_active ()
+		&& _group->is_color ()
+		&& _group->is_monitoring();
+}
+
+void
+RouteGroupDialog::route_property_toggled ()
+{
+	_select_all_conn.block ();
+	_select_all.set_active (are_all_route_properties_active ());
+	_select_all_conn.unblock ();
 }
