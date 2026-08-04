@@ -47,6 +47,7 @@ private:
 
 	Gtk::Entry        _name;
 	Gtk::CheckButton  _active;
+	Gtk::CheckButton  _select_all;
 	Gtk::CheckButton  _gain;
 	Gtk::CheckButton  _relative;
 	Gtk::CheckButton  _mute;
@@ -63,7 +64,11 @@ private:
 	void gain_toggled ();
 	void update ();
 	bool unique_name (std::string const name) const;
+	void select_all_toggled ();
+	void route_property_toggled ();
+	bool are_all_route_properties_active () const;
 
+	sigc::connection _select_all_conn;
 	PBD::ScopedConnection _group_connection;
 };
 
