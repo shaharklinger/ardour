@@ -734,7 +734,7 @@ GroupTabs::run_new_group_dialog (RouteList const * rl, bool with_master)
 	}
 
 	d->signal_response().connect (sigc::bind (sigc::mem_fun (*this, &GroupTabs::new_group_dialog_finished), d, rl ? new RouteList (*rl): 0, with_master));
-	d->present ();
+	d->run ();
 }
 
 void
@@ -769,7 +769,7 @@ GroupTabs::edit_group (std::shared_ptr<RouteGroup> g)
 {
 	RouteGroupDialog* d = new RouteGroupDialog (g, false);
 	d->signal_response().connect (sigc::bind (sigc::mem_fun (*this, &GroupTabs::edit_group_dialog_finished), d));
-	d->present ();
+	d->run ();
 }
 
 void

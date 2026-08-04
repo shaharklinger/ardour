@@ -176,7 +176,7 @@ RouteGroupMenu::new_group ()
 	RouteGroupDialog* d = new RouteGroupDialog (g, true);
 
 	d->signal_response().connect (sigc::bind (sigc::mem_fun (*this, &RouteGroupMenu::new_group_dialog_finished), d));
-	d->present ();
+	d->run ();
 }
 
 void
@@ -199,7 +199,7 @@ RouteGroupMenu::edit_group (std::weak_ptr<ARDOUR::RouteGroup> wg)
 	}
 	RouteGroupDialog* d = new RouteGroupDialog (g, false);
 	d->signal_response().connect (sigc::hide (sigc::bind (sigc::ptr_fun (&delete_when_idle<RouteGroupDialog>), d)));
-	d->present ();
+	d->run ();
 }
 
 Gtk::Menu *
